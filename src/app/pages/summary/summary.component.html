@@ -1,0 +1,157 @@
+<div class="summary-page">
+  <div class="page-header">
+    <div class="header-content">
+      <h1>Summaries</h1>
+      <p>AI-powered insights from your journal entries</p>
+    </div>
+  </div>
+
+  <!-- Model Status Banner -->
+  @if (webllmService.isLoading() || webllmService.isReady() || webllmService.status() === 'error') {
+    <div class="model-banner" [class]="'status-' + webllmService.status()">
+      @if (webllmService.isLoading()) {
+        <div class="banner-loading">
+          <div class="spinner"></div>
+          <div class="banner-text">
+            <span class="banner-title">Loading AI Model</span>
+            <span class="banner-detail">{{ webllmService.progressMsg() }}</span>
+            @if (webllmService.progress() > 0) {
+              <div class="progress-bar">
+                <div class="progress-fill" [style.width.%]="webllmService.progress()"></div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+      @if (webllmService.isReady()) {
+        <div class="banner-ready">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2"/>
+            <path d="M7 10L9 12L13 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>AI Model Ready</span>
+        </div>
+      }
+      @if (webllmService.status() === 'error') {
+        <div class="banner-error">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2"/>
+            <path d="M10 6V11M10 13V14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span>{{ webllmService.error() || 'Model failed to load' }}</span>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Controls -->
+  <div class="controls-card">
+    <div class="controls-row">
+      <div class="view-toggle">
+        <button [class.active]="viewMode() === 'week'" (click)="setView('week')">Weekly</button>
+        <button [class.active]="viewMode() === 'month'" (click)="setView('month')">Monthly</button>
+      </div>
+
+      <div class="period-nav">
+        <button class="nav-btn" (click)="prevPeriod()">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M11 14L6 9L11 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <span class="period-label">{{ periodLabel() }}</span>
+        <button class="nav-btn" (click)="nextPeriod()" [disabled]="!canGoBack()">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M7 4L12 9L7 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <button
+        class="generate-btn"
+        (click)="generateSummary()"
+        [disabled]="isGenerating() || entries().length === 0"
+      >
+        @if (isGenerating()) {
+          <div class="btn-spinner"></div>
+          Generating...
+        } @else {
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M9 2L11 7L16 9L11 11L9 16L7 11L2 9L7 7L9 2Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Generate Summary
+        }
+      </button>
+    </div>
+  </div>
+
+  <div class="content-grid">
+    <!-- Entry Stats -->
+    <div class="stats-sidebar">
+      <div class="stat-card">
+        <span class="stat-value">{{ entryCount() }}</span>
+        <span class="stat-label">Entries</span>
+      </div>
+      @if (moodSummary()) {
+        <div class="stat-card mood-stat">
+          <span class="stat-emoji">{{ getMoodEmoji(moodSummary()!) }}</span>
+          <span class="stat-label">Dominant Mood</span>
+        </div>
+      }
+      @if (topTags().length > 0) {
+        <div class="stat-card tags-stat">
+          <span class="stat-label">Top Tags</span>
+          <div class="tag-list">
+            @for (t of topTags(); track t.tag) {
+              <span class="tag-chip">{{ t.tag }} <span class="tag-count">{{ t.count }}</span></span>
+            }
+          </div>
+        </div>
+      }
+      @if (entries().length > 0) {
+        <div class="stat-card entries-preview">
+          <span class="stat-label">Entries Preview</span>
+          @for (entry of entries().slice(0, 3); track entry.id) {
+            <div class="preview-item">
+              <span class="preview-date">{{ entry.date }}</span>
+              <span class="preview-title">{{ entry.title }}</span>
+            </div>
+          }
+          @if (entries().length > 3) {
+            <span class="more-entries">+{{ entries().length - 3 }} more</span>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Summary Output -->
+    <div class="summary-output">
+      @if (entries().length === 0) {
+        <div class="empty-state">
+          <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+            <path d="M32 8L38 22L52 24L42 34L44 48L32 42L20 48L22 34L12 24L26 22L32 8Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          </svg>
+          <h3>No entries for this period</h3>
+          <p>Navigate to a different period or add journal entries first.</p>
+        </div>
+      } @else if (summary()) {
+        <div class="summary-content" [innerHTML]="renderMarkdown(summary())"></div>
+      } @else if (error()) {
+        <div class="error-state">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+            <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="2"/>
+            <path d="M24 14V28M24 32V34" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+          <p>{{ error() }}</p>
+        </div>
+      } @else {
+        <div class="placeholder-state">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+            <path d="M24 8L28 18L38 20L30 28L32 38L24 33L16 38L18 28L10 20L20 18L24 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <h3>Ready to analyze</h3>
+          <p>Click "Generate Summary" to get AI insights about your {{ viewMode() === 'week' ? 'weekly' : 'monthly' }} journal entries.</p>
+        </div>
+      }
+    </div>
+  </div>
+</div>

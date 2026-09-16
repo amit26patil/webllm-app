@@ -1,0 +1,54 @@
+<div class="entry-list">
+  @if (entries.length === 0) {
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+          <rect x="12" y="8" width="40" height="48" rx="4" stroke="currentColor" stroke-width="2"/>
+          <line x1="20" y1="20" x2="44" y2="20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="20" y1="28" x2="38" y2="28" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="20" y1="36" x2="42" y2="36" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="20" y1="44" x2="32" y2="44" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <h3>No entries yet</h3>
+      <p>Start writing your thoughts!</p>
+    </div>
+  } @else {
+    @for (entry of entries; track entry.id) {
+      <div class="entry-card" (click)="view.emit(entry)">
+        <div class="entry-top">
+          <div class="entry-meta">
+            @if (showDate) {
+              <span class="entry-date">{{ formatDate(entry.date) }}</span>
+            }
+            <span class="entry-time">{{ formatTime(entry.createdAt) }}</span>
+          </div>
+          <div class="entry-mood" [title]="getMoodLabel(entry.mood)">
+            {{ getMoodEmoji(entry.mood) }}
+          </div>
+        </div>
+        <h4 class="entry-title">{{ entry.title }}</h4>
+        <p class="entry-content">{{ truncate(entry.content, 160) }}</p>
+        @if (entry.tags.length > 0) {
+          <div class="entry-tags">
+            @for (tag of entry.tags; track tag) {
+              <span class="tag">{{ tag }}</span>
+            }
+          </div>
+        }
+        <div class="entry-actions">
+          <button class="action-btn edit-btn" (click)="$event.stopPropagation(); edit.emit(entry)" title="Edit">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M11.5 1.5L14.5 4.5L5 14H2V11L11.5 1.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button class="action-btn delete-btn" (click)="$event.stopPropagation(); delete.emit(entry.id)" title="Delete">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M2 4H14M5 4V2H11V4M6 7V12M10 7V12M3 4L4 14H12L13 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    }
+  }
+</div>

@@ -1,0 +1,70 @@
+<div class="calendar-container">
+  <div class="calendar-header">
+    <div class="header-top">
+      <h2 class="calendar-title" (click)="viewMode.set('year')">
+        {{ monthNames[currentMonth()] }} {{ currentYear() }}
+      </h2>
+      <button class="btn-today" (click)="goToday()">Today</button>
+    </div>
+    @if (viewMode() === 'month') {
+    <div class="nav-arrows">
+      <button class="nav-btn" (click)="prevMonth()">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M12 15L7 10L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button class="nav-btn" (click)="nextMonth()">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M8 5L13 10L8 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+    }
+  </div>
+
+  <!-- Year View -->
+  @if (viewMode() === 'year') {
+    <div class="year-view">
+      <h3 class="year-title">{{ currentYear() }}</h3>
+      <div class="month-grid">
+        @for (m of getMonthGrid(); track m.month) {
+          <div class="month-card" (click)="selectMonth(m.month)">
+            <span class="month-name">{{ m.name }}</span>
+            <span class="month-full">{{ monthNames[m.month] }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Month View -->
+  @if (viewMode() === 'month') {
+    <div class="month-view">
+      <div class="day-headers">
+        @for (day of dayNames; track day) {
+          <div class="day-header">{{ day }}</div>
+        }
+      </div>
+      <div class="days-grid">
+        @for (dayObj of calendarDays(); track $index) {
+          <div
+            class="day-cell"
+            [class.empty]="dayObj.day === 0"
+            [class.today]="dayObj.isToday"
+            [class.has-entries]="dayObj.hasEntries"
+            (click)="dayObj.day !== 0 && goToDay(dayObj.dateStr)"
+          >
+            @if (dayObj.day !== 0) {
+              <span class="day-number">{{ dayObj.day }}</span>
+              @if (dayObj.hasEntries) {
+                <span class="entry-dots">
+                  <span class="dot"></span>
+                </span>
+              }
+            }
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

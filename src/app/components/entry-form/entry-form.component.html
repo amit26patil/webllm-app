@@ -1,0 +1,97 @@
+<div class="form-overlay" (click)="onCancel()">
+  <div class="form-card" (click)="$event.stopPropagation()">
+    <div class="form-header">
+      <h3>{{ isEditing ? 'Edit Entry' : 'New Entry' }}</h3>
+      <button class="close-btn" (click)="onCancel()">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <form (ngSubmit)="onSubmit()" class="form-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" [value]="date()" (input)="updateDate($any($event.target).value)" required />
+        </div>
+        <div class="form-group">
+          <label>Time</label>
+          <input type="time" [value]="time()" (input)="updateTime($any($event.target).value)" required />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Title</label>
+        <input
+          type="text"
+          [value]="title()"
+          (input)="updateTitle($any($event.target).value)"
+          placeholder="What's on your mind?"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label>How are you feeling?</label>
+        <div class="mood-selector">
+          @for (option of moodOptions; track option.value) {
+            <button
+              type="button"
+              class="mood-btn"
+              [class.active]="mood() === option.value"
+              (click)="setMood(option.value)"
+              [title]="option.label"
+            >
+              <span class="mood-emoji">{{ option.emoji }}</span>
+              <span class="mood-label">{{ option.label }}</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Tags</label>
+        <div class="tags-input-wrapper">
+          <div class="tags-list">
+            @for (tag of tags(); track tag) {
+              <span class="tag-chip">
+                {{ tag }}
+                <button type="button" class="tag-remove" (click)="removeTag(tag)">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M9 3L3 9M3 3L9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                </button>
+              </span>
+            }
+          </div>
+          <input
+            type="text"
+            [value]="tagsInput()"
+            (input)="updateTagsInput($any($event.target).value)"
+            (keydown)="onTagKeydown($event)"
+            placeholder="Add tag and press Enter"
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Your thoughts</label>
+        <textarea
+          [value]="content()"
+          (input)="updateContent($any($event.target).value)"
+          placeholder="Write your thoughts here..."
+          rows="8"
+          required
+        ></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="onCancel()">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="!title().trim() || !content().trim()">
+          {{ isEditing ? 'Update Entry' : 'Save Entry' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

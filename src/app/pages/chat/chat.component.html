@@ -1,0 +1,123 @@
+<div class="chat-page">
+  <div class="page-header">
+    <div class="header-content">
+      <h1>Chat with Journal</h1>
+      <p>Ask questions about your thoughts and experiences</p>
+    </div>
+    @if (messages().length > 0) {
+      <button class="clear-btn" (click)="clearChat()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M2 4H14M5 4V2H11V4M6 7V12M10 7V12M3 4L4 14H12L13 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Clear Chat
+      </button>
+    }
+  </div>
+
+  <!-- Model Status -->
+  @if (webllmService.isLoading()) {
+    <div class="model-status loading">
+      <div class="spinner"></div>
+      <div class="status-text">
+        <span class="status-title">Loading AI Model</span>
+        <span class="status-detail">{{ webllmService.progressMsg() }}</span>
+        @if (webllmService.progress() > 0) {
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width.%]="webllmService.progress()"></div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Chat Area -->
+  <div class="chat-container">
+    <div class="messages-area" #scrollContainer>
+      @if (messages().length === 0) {
+        <div class="welcome-state">
+          <div class="welcome-icon">
+            <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+              <rect x="8" y="12" width="40" height="32" rx="4" stroke="currentColor" stroke-width="2"/>
+              <path d="M16 20H40M16 28H32M16 36H38" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="44" cy="36" r="8" fill="var(--primary)" stroke="var(--bg-primary)" stroke-width="2"/>
+              <path d="M42 36L44 38L47 34" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h2>Ask me anything about your journal</h2>
+          <p>I have access to all {{ totalEntries }} of your journal entries. Ask me about patterns, specific events, or anything you've written about.</p>
+          <div class="suggested-questions">
+            @for (q of suggestedQuestions; track q) {
+              <button class="suggestion-chip" (click)="sendMessage(q)">
+                {{ q }}
+              </button>
+            }
+          </div>
+        </div>
+      } @else {
+        @for (msg of messages(); track msg.timestamp) {
+          <div class="message" [class.user]="msg.role === 'user'" [class.assistant]="msg.role === 'assistant'">
+            <div class="message-avatar">
+              @if (msg.role === 'user') {
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <circle cx="10" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M3 18C3 14.134 6.13401 11 10 11C13.866 11 17 14.134 17 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              } @else {
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M10 2L12 7L17 9L12 11L10 16L8 11L3 9L8 7L10 2Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              }
+            </div>
+            <div class="message-content">
+              <div class="message-header">
+                <span class="message-role">{{ msg.role === 'user' ? 'You' : 'Journal AI' }}</span>
+                <span class="message-time">{{ formatTime(msg.timestamp) }}</span>
+              </div>
+              <div class="message-text" [innerHTML]="msg.role === 'assistant' ? renderMarkdown(msg.content) : escapeHtml(msg.content)"></div>
+            </div>
+          </div>
+        }
+        @if (isLoading()) {
+          <div class="message assistant">
+            <div class="message-avatar">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M10 2L12 7L17 9L12 11L10 16L8 11L3 9L8 7L10 2Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="message-content">
+              <div class="typing-indicator">
+                <span></span><span></span><span></span>
+              </div>
+            </div>
+          </div>
+        }
+      }
+    </div>
+
+    <!-- Input Area -->
+    <div class="input-area">
+      <div class="input-wrapper">
+        <textarea
+          [value]="userInput()"
+          (input)="userInput.set($any($event.target).value)"
+          (keydown)="onKeydown($event)"
+          placeholder="Ask about your journal entries..."
+          rows="1"
+          [disabled]="isLoading()"
+        ></textarea>
+        <button
+          class="send-btn"
+          (click)="sendMessage()"
+          [disabled]="!userInput().trim() || isLoading()"
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M18 2L9 11M18 2L12 18L9 11M18 2L2 8L9 11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+      @if (totalEntries === 0) {
+        <p class="input-hint warning">No journal entries found. Add some entries first to chat about them.</p>
+      }
+    </div>
+  </div>
+</div>

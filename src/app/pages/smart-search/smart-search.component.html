@@ -1,0 +1,140 @@
+<div class="search-page">
+  <div class="page-header">
+    <h1>Smart Search</h1>
+    <p>Search your journal with natural language - the AI understands intent, not just keywords</p>
+  </div>
+
+  <!-- Model Status -->
+  @if (webllmService.isLoading()) {
+    <div class="model-status">
+      <div class="spinner"></div>
+      <div class="status-text">
+        <span class="status-title">Loading AI Model</span>
+        <span class="status-detail">{{ webllmService.progressMsg() }}</span>
+        @if (webllmService.progress() > 0) {
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width.%]="webllmService.progress()"></div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Search Input -->
+  <div class="search-input-card">
+    <div class="search-input-wrapper">
+      <svg class="search-icon" width="22" height="22" viewBox="0 0 22 22" fill="none">
+        <circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="2"/>
+        <path d="M15 15L20 20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <input
+        type="text"
+        [value]="query()"
+        (input)="query.set($any($event.target).value)"
+        (keydown)="onKeydown($event)"
+        placeholder="e.g., When was I most stressed? What made me happy? What are my recurring themes?"
+        [disabled]="isSearching()"
+      />
+      @if (query()) {
+        <button class="clear-input" (click)="clearSearch()">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      }
+      <button
+        class="search-btn"
+        (click)="search()"
+        [disabled]="!query().trim() || isSearching() || totalEntries === 0"
+      >
+        @if (isSearching()) {
+          <div class="btn-spinner"></div>
+          Searching...
+        } @else {
+          Search
+        }
+      </button>
+    </div>
+    @if (totalEntries === 0) {
+      <p class="search-warning">No journal entries found. Add some entries first to enable smart search.</p>
+    }
+  </div>
+
+  <!-- Recent Searches -->
+  @if (recentSearches().length > 0 && !searchResult() && !isSearching()) {
+    <div class="recent-searches">
+      <h3>Recent Searches</h3>
+      <div class="recent-list">
+        @for (item of recentSearches(); track item) {
+          <div class="recent-item" (click)="search(item)">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M7 4V7L9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <span>{{ item }}</span>
+            <button class="remove-recent" (click)="$event.stopPropagation(); removeRecentSearch(item)">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M9 3L3 9M3 3L9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Results -->
+  <div class="results-area">
+    @if (isSearching()) {
+      <div class="searching-state">
+        <div class="search-pulse">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+            <circle cx="20" cy="20" r="14" stroke="currentColor" stroke-width="2.5"/>
+            <path d="M30 30L40 40" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h3>Analyzing your entries...</h3>
+        <p>The AI is reading through your journal to find the most relevant results.</p>
+      </div>
+    } @else if (searchResult()) {
+      <div class="result-card">
+        <div class="result-header">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2"/>
+            <path d="M7 10L9 12L13 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>Search Results</span>
+        </div>
+        <div class="result-content" [innerHTML]="renderMarkdown(searchResult())"></div>
+      </div>
+    } @else if (error()) {
+      <div class="error-card">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+          <circle cx="20" cy="20" r="16" stroke="currentColor" stroke-width="2"/>
+          <path d="M20 12V22M20 26V28" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+        <h3>Search Error</h3>
+        <p>{{ error() }}</p>
+        <button class="retry-btn" (click)="search()">Try Again</button>
+      </div>
+    } @else if (!recentSearches().length) {
+      <div class="empty-state">
+        <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+          <circle cx="24" cy="24" r="16" stroke="currentColor" stroke-width="2"/>
+          <path d="M36 36L48 48" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M18 24H30M24 18V30" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+        </svg>
+        <h2>Search your journal naturally</h2>
+        <p>Unlike keyword search, smart search understands meaning. Try asking:</p>
+        <div class="example-queries">
+          <button class="example-chip" (click)="search('When did I feel most creative?')">When did I feel most creative?</button>
+          <button class="example-chip" (click)="search('What stressed me out this month?')">What stressed me out this month?</button>
+          <button class="example-chip" (click)="search('Find entries about relationships')">Find entries about relationships</button>
+          <button class="example-chip" (click)="search('What goals did I mention?')">What goals did I mention?</button>
+          <button class="example-chip" (click)="search('How did my week go?')">How did my week go?</button>
+          <button class="example-chip" (click)="search('What am I grateful for?')">What am I grateful for?</button>
+        </div>
+      </div>
+    }
+  </div>
+</div>
